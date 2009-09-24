@@ -9,13 +9,12 @@ class AMEEConnection:
     if (self.username or self.password) and not self.valid():
      raise "Must specify both username and password for authenticated access"
     self.enable_caching = enable_caching
-    #if self.enable_caching
-      #$cache ||= {}
-    #end
+    if self.enable_caching
+      self.cache = {}
     # Make connection to server
-    #self.http = Net::HTTP.new(@server)
-    #self.http.read_timeout = 5
-    #self.http.set_debug_output() if enable_debug
+    self.http = Net::HTTP.new(@server)
+    self.http.read_timeout = 5
+    self.http.set_debug_output() if enable_debug
 
 #  def timeout(self):
 #    @http.read_timeout
