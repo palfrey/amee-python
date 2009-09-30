@@ -2,6 +2,7 @@ from urlgrab.URLTimeout import URLTimeoutError
 from urlgrab.GetURL import GetURL
 from xml.etree.ElementTree import fromstring, ElementTree
 from types import ListType
+import pprint
 
 class AMEE:
 	def __init__(self, server, username = None, password = None):
@@ -70,4 +71,5 @@ class DataCategory(XMLDictionary):
 if __name__ == "__main__":
 	(u,p) = [x.strip() for x in open("config").readlines() if x.strip()!=""]
 	a = AMEE("stage.amee.com", u,p)
-	print a.DataCategory()
+	pp = pprint.PrettyPrinter()
+	pp.pprint(a.DataCategory())
