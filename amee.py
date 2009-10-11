@@ -30,7 +30,7 @@ class AMEE:
 			assert self.token != None
 			data = self.cache.get("http://%s/%s"%(self.server,uri),headers={"Accept":"application/xml","Authtoken":self.token}, max_age = -1).read()
 		except URLTimeoutError, e:
-			if e.code == 401: # only do t
+			if e.code == 401: # only do this once just in case the token was an old cached one
 				self._auth(refresh=True)
 				assert self.token != None
 				data = self.cache.get("http://%s/%s"%(self.server,uri),headers={"Accept":"application/xml","Authtoken":self.token}, max_age = -1).read()
