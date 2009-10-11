@@ -55,9 +55,12 @@ class XMLDictionary(dict):
 		for k in top.getchildren():
 			c = XMLDictionary(k)
 			if k.text!=None:
-				assert c.keys() == [],(k.text,c.keys())
-				assert not self.has_key(c.tag)
-				self[c.tag] = k.text
+				if c.keys() == []:
+					assert not self.has_key(c.tag)
+					self[c.tag] = k.text
+					continue
+				else:
+					c["_text"] = k.text
 			if len(c.keys()) == 0:
 				continue
 			if self.has_key(c.tag):
