@@ -133,6 +133,17 @@ class DataCategory(ResourceDictionary):
 class DataItem(ResourceDictionary):
 	_Prefix = "DataItem"
 
+	def item_values(self):
+		assert type(self["DataItem"]) != ListType , self
+		v = self["DataItem"]["ItemValues"]["ItemValue"]
+		assert type(v) == ListType,v
+		return dict([(x["Name"],x["Value"]) for x in v])
+
+	def choices(self):
+		c = self["Choices"]
+		assert c["Name"] == "userValueChoices",c
+		return c["Choices"]["Choice"]
+
 if __name__ == "__main__":
 	(u,p) = [x.strip() for x in open("config").readlines() if x.strip()!=""]
 	a = AMEE("stage.amee.com", u,p)
