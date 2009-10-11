@@ -1,8 +1,10 @@
 from urlgrab.URLTimeout import URLTimeoutError
 from urlgrab.GetURL import GetURL
-from xml.etree.ElementTree import fromstring, ElementTree
-from types import ListType
+from xml.etree.ElementTree import fromstring, ElementTree, tostring
+from xml.parsers.expat import ExpatError
+from types import ListType, DictType
 import pprint
+from os.path import join
 
 class AMEE:
 	def __init__(self, server, username = None, password = None):
@@ -43,9 +45,18 @@ class AMEE:
 
 	def DataCategory(self, path = None):
 		if path == None:
-			return DataCategory(self._get_authed("data"))
+			xml = self._get_authed("data/")
 		else:
-			return DataCategory(self._get_authed("data/%s"%path))
+			assert path[0] == "/"
+			pth = "data" + path
+			xml = self._get_authed(pth)
+		return DataCategory(xml,path)
+
+	def DataItem(self, path):
+		assert path[0] == "/"
+		pth = "data" + path
+		xml = self._get_authed(pth)
+		return DataItem(xml, path)
 
 class XMLDictionary(dict):
 	def __init__(self, top):
@@ -72,11 +83,71 @@ class XMLDictionary(dict):
 			else:
 				self[c.tag] = c
 
-class DataCategory(XMLDictionary):
-	pass
+class ResourceDictionary(XMLDictionary):
+	_Prefix = None
+	def __init__(self, top, path):
+		XMLDictionary.__init__(self,top)
+		assert self._Prefix!=None
+		if path == None:
+			self.path = "/"
+		else:
+			self.path = path
+		assert self._Prefix + "Resource" in self
+
+		assert self._Prefix in self[self._Prefix + "Resource"],self
+		for k in self[self._Prefix + "Resource"]:
+			self[k] = self[self._Prefix + "Resource"][k]
+		del self[self._Prefix + "Resource"]
+		
+		if "Children" in self:
+			for k in self["Children"]:
+				if len(self["Children"][k]) == 1:
+					self["Children"][k] = self["Children"][k][self["Children"][k].keys()[0]]
+
+class DataCategory(ResourceDictionary):
+	_Prefix = "DataCategory"
+	def _get_uid(self):
+		return self["DataCategory"]["uid"]
+	uid = property(_get_uid, None)
+
+	def join(self, sub_path):
+		return join(self.path, sub_path)
+
+	def cat_paths(self):
+		if "Children" not in self or "DataCategories" not in self["Children"]:
+			return []
+		if type(self["Children"]["DataCategories"]) == ListType:
+			return [self.join(x["Path"]) for x in self["Children"]["DataCategories"]]
+		else:
+			return [self.join(self["Children"]["DataCategories"]["Path"])]
 	
+	def item_paths(self):
+		if "Children" not in self or "DataItems" not in self["Children"]:
+			return []
+		print self
+		if type(self["Children"]["DataItems"]) == ListType:
+			return [(x["label"],self.join(x["path"])) for x in self["Children"]["DataItems"]]
+		else:
+			return [(self["Children"]["DataItems"]["label"],self.join(self["Children"]["DataItems"]["path"]))]
+
+class DataItem(ResourceDictionary):
+	_Prefix = "DataItem"
+
 if __name__ == "__main__":
 	(u,p) = [x.strip() for x in open("config").readlines() if x.strip()!=""]
 	a = AMEE("stage.amee.com", u,p)
+	dc = a.DataCategory()
+	while True:
+		print dc.uid
+		cp = dc.cat_paths()
+		print cp
+		if len(cp)>0:
+			dc = a.DataCategory(cp[0])
+		else:
+			ip = dc.item_paths()
+			print ip
+			dc = a.DataItem(ip[0][1])
+			break
+
 	pp = pprint.PrettyPrinter()
-	pp.pprint(a.DataCategory())
+	pp.pprint(dc)
