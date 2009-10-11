@@ -34,7 +34,11 @@ class AMEE:
 				data = self.cache.get("http://%s/%s"%(self.server,uri),headers={"Accept":"application/xml","Authtoken":self.token}, max_age = -1).read()
 			else:
 				raise
-		xml = fromstring(data)
+		try:
+			xml = fromstring(data)
+		except ExpatError:
+			open("dump","w").write(data)
+			raise
 		return ElementTree(xml).getroot()
 
 	def DataCategory(self, path = None):
